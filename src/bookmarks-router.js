@@ -10,8 +10,8 @@ bookmarksRouter.route('/bookmarks')
     res.json(bookmarks);
   })
   .post(bodyParser, (req, res) => {
-    const {title, url, desc, rating} = req.body;
-    if (!title || !url || !desc || !rating) {
+    const {title, url, description, rating} = req.body;
+    if (!title || !url || !description || !rating) {
       logger.error('All fields are required');
       return res.status(400).send('Invalid data');
     }
@@ -20,12 +20,12 @@ bookmarksRouter.route('/bookmarks')
       id,
       title,
       url,
-      desc,
+      description,
       rating
     };
-    bookmarks.push(bookmark);
+    //bookmarks.push(bookmark);
     logger.info(`Bookmark with id ${id} created`);
-    res.status(201).location(`http://localhost:8000/bookmark/${id}`);
+    res.status(201).location(`http://localhost:8000/bookmark/${id}`).json(bookmark);
   });
 
 bookmarksRouter.route('/bookmarks/:id')
