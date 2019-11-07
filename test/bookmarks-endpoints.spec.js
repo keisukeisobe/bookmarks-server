@@ -3,7 +3,6 @@ const knex = require('knex');
 const app = require('../src/app');
 const { makeBookmarksArray } = require('./bookmarks.fixtures');
 
-
 describe('Bookmarks Endpoints', function() {
   let db;
 
@@ -20,7 +19,6 @@ describe('Bookmarks Endpoints', function() {
   before('clean the table', () => db('bookmarks').truncate());
 
   afterEach('cleanup', () => db('bookmarks').truncate());
-
 
   describe('GET endpoint', () => {
     context('given there are bookmarks in the database', () => {
@@ -51,5 +49,14 @@ describe('Bookmarks Endpoints', function() {
     });
   });
 
+  describe('incorrect authorization returns 401', () => {
+    it('GET /bookmarks with no auth', () => {
+      return supertest(app)
+        .get('/bookmarks').expect(401);
+    });
 
+    it('GET /bookmarks/:id with no auth returns 401', () => {
+      return supertest(app).get('/bookmarks/999').expect(401);
+    });
+  });
 });
