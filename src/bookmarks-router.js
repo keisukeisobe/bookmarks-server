@@ -1,7 +1,6 @@
 const express = require('express');
 const bookmarksRouter = express.Router();
 const jsonParser = express.json();
-//const uuid = require('uuid/v4');
 const logger = require('./logger');
 const xss = require('xss');
 const path = require('path');
@@ -37,7 +36,9 @@ bookmarksRouter.route('/api/bookmarks')
 
     BookmarksService.insertBookmark(knexInstance, newBookmark)
       .then(bookmark => {
-        res.status(201).location(path.posix.join(req.originalUrl, `/${bookmark.id}`)).json(bookmark);
+        res.status(201)
+          .location(path.posix.join(req.originalUrl, `/${bookmark.id}`))
+          .json(bookmark);
       })
       .catch(next);
   });
@@ -54,15 +55,15 @@ bookmarksRouter.route('/api/bookmarks/:id')
         res.bookmark = {
           id: bookmark.id,
           title: xss(bookmark.title),
+          rating: bookmark.rating,
           url: xss(bookmark.url),
-          description: xss(bookmark.description),
-          rating: bookmark.rating
+          description: xss(bookmark.description)
         };
         next();
       })
       .catch(next);
   })
-  .get( (req, res, next) => {
+  .get( (req, res) => {
     return res.json(res.bookmark);
   })
   .delete( (req, res, next) => {
@@ -83,7 +84,7 @@ bookmarksRouter.route('/api/bookmarks/:id')
     const {title, url, rating, description } = req.body;
     const newBookmarkData = { title: xss(title), rating: xss(rating), url: xss(url), description: xss(description)};
     BookmarksService.updateBookmark(knexInstance, req.params.id, newBookmarkData)
-      .then(numRowsAffected => {
+      .then( () => {
         return res.status(204).end();
       })
       .catch(next);
