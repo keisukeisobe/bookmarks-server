@@ -23,10 +23,28 @@ bookmarksRouter.route('/api/bookmarks')
   })
   .post(jsonParser, (req, res, next) => {
     const knexInstance = req.app.get('db');
-    const {id, title, url, description, rating} = req.body;
-    const newBookmark = {id: xss(id), title: xss(title), url: xss(url), description: xss(description), rating};
-
-    for(const[key, value] of Object.entries(newBookmark)) {
+    const newBookmarkData = {};
+    if (req.body.title) {
+      newBookmarkData.title = xss(req.body.title);
+    } else {
+      newBookmarkData.title = null;
+    }
+    if (req.body.url) {
+      newBookmarkData.url = xss(req.body.url);
+    } else {
+      newBookmarkData.url = null;
+    }
+    if (req.body.rating) {
+      newBookmarkData.rating = parseInt(req.body.rating);
+    } else {
+      newBookmarkData.rating = null;
+    }
+    if(req.body.description) {
+      newBookmarkData.description = xss(req.body.description);
+    } else {
+      newBookmarkData.description = null;
+    }
+    for(const[key, value] of Object.entries(newBookmarkData)) {
       if(value === null) {
         return res.status(400).json({
           error: {message: `Missing '${key}' in request body` }
@@ -34,10 +52,10 @@ bookmarksRouter.route('/api/bookmarks')
       }
     }
 
-    BookmarksService.insertBookmark(knexInstance, newBookmark)
+    BookmarksService.insertBookmark(knexInstance, newBookmarkData)
       .then(bookmark => {
         res.status(201)
-          .location(path.posix.join(req.originalUrl, `/${bookmark.id}`))
+          .location(path.posix.join(req.originalUrl, `${bookmark.id}`))
           .json(bookmark);
       })
       .catch(next);
@@ -45,7 +63,8 @@ bookmarksRouter.route('/api/bookmarks')
 
 bookmarksRouter.route('/api/bookmarks/:id')
   .all( (req, res, next) => {
-    BookmarksService.getById(req.app.get('db'), req.params.id)
+    const knexInstance = req.app.get('db');
+    BookmarksService.getById(knexInstance, req.params.id)
       .then(bookmark => {
         if(!bookmark) {
           return res.status(404).json({
@@ -60,6 +79,7 @@ bookmarksRouter.route('/api/bookmarks/:id')
           description: xss(bookmark.description)
         };
         next();
+        return null;
       })
       .catch(next);
   })
@@ -82,7 +102,28 @@ bookmarksRouter.route('/api/bookmarks/:id')
   .patch(jsonParser, (req, res, next) => {
     const knexInstance = req.app.get('db');
     const {title, url, rating, description } = req.body;
-    const newBookmarkData = { title: xss(title), rating: xss(rating), url: xss(url), description: xss(description)};
+    const newBookmarkData = {};
+    if (title) {
+      newBookmarkData.title = xss(title);
+    }
+    if (url) {
+      newBookmarkData.url = xss(url);
+    }
+    if (rating) {
+      newBookmarkData.rating = parseInt(rating);
+    }
+    if(description) {
+      newBookmarkData.description = xss(description);
+    }
+    const numberOfValues = Object.values(newBookmarkData).filter(Boolean).length;
+    if (numberOfValues === 0) {
+      return res.status(400).json({
+        error: {
+          message: 'Request body must contain either \'title\', \'url\', and \'id\'.'
+        }
+      });
+    }
+    
     BookmarksService.updateBookmark(knexInstance, req.params.id, newBookmarkData)
       .then( () => {
         return res.status(204).end();
