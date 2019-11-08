@@ -147,20 +147,30 @@ describe('Bookmarks', function() {
       beforeEach('insert bookmarks', () => {
         return db.into('bookmarks').insert(testBookmarksArray);
       });
-      //this one hangs
+
       it('responds with 204 and removes bookmark', () => {
         const idToRemove = '1';
         const expectedBookmarks = testBookmarksArray.filter(bookmark => bookmark.id !== idToRemove);
-        return supertest(app).delete(`/api/bookmarks/${idToRemove}`).set('Authorization', `Bearer ${process.env.API_TOKEN}`).expect(204)
-          .then(res => {
-            supertest(app).get('/api/bookmarks').set('Authorization', `Bearer ${process.env.API_TOKEN}`).expect(expectedBookmarks);
+        return supertest(app)
+          .delete(`/api/bookmarks/${idToRemove}`)
+          .set('Authorization', `Bearer ${process.env.API_TOKEN}`)
+          .expect(204)
+          .then(() => {
+            return supertest(app)
+              .get('/api/bookmarks')
+              .set('Authorization', `Bearer ${process.env.API_TOKEN}`)
+              .expect(expectedBookmarks);
           });
       });
     });
+
     context('given no bookmarks', () => {
       it('responds with 404', () => {
         const bookmarkId = 99999;
-        return supertest(app).delete(`/api/bookmarks/${bookmarkId}` ).set('Authorization', `Bearer ${process.env.API_TOKEN}`).expect(404, {error: {message: `Bookmark with id ${bookmarkId} not found.`}});
+        return supertest(app)
+          .delete(`/api/bookmarks/${bookmarkId}` )
+          .set('Authorization', `Bearer ${process.env.API_TOKEN}`)
+          .expect(404, {error: {message: `Bookmark with id ${bookmarkId} not found.`}});
       });
     });
   });
@@ -171,6 +181,7 @@ describe('Bookmarks', function() {
       beforeEach('insert bookmarks', () => {
         return db.into('bookmarks').insert(testBookmarks);
       });
+
       it('responds with 204 and updates the bookmark', () => {
         const idToUpdate = 2;
         const updateBookmark = {
@@ -183,21 +194,27 @@ describe('Bookmarks', function() {
           ...testBookmarks[idToUpdate-1],
           ...updateBookmark
         };
+
         return supertest(app)
           .patch(`/api/bookmarks/${idToUpdate}`)
           .set('Authorization', `Bearer ${process.env.API_TOKEN}`)
           .send(updateBookmark)
           .expect(204)
-          .then(res => supertest(app)
-            .get(`api/bookmarks/${idToUpdate}`)
-            .set('Authorization', `Bearer ${process.env.API_TOKEN}`)
-            .expect(200));
+          .then(() => 
+            supertest(app)
+              .get(`/api/bookmarks/${idToUpdate}`)
+              .set('Authorization', `Bearer ${process.env.API_TOKEN}`)
+              .expect(expectedBookmark)
+          );
       });
     });
+
     context('given book with id does not exist', () => {
       it('responds with 404', () => {
         const bookmarkId = 99999;
-        return supertest(app).patch(`/api/bookmarks/${bookmarkId}`).set('Authorization', `Bearer ${process.env.API_TOKEN}`)
+        return supertest(app)
+          .patch(`/api/bookmarks/${bookmarkId}`)
+          .set('Authorization', `Bearer ${process.env.API_TOKEN}`)
           .expect(404, {error: {message: `Bookmark with id ${bookmarkId} not found.`}});
       });
     });
